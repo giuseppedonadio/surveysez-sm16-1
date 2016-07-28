@@ -1,5 +1,9 @@
 /*
-  surveysez-07182016.sql - updated 4/17/2014
+
+  surveysez-07272016.sql
+
+  first version of SurveySez tables
+  
 
   Here are a few notes on things below that may not be self evident:
 
@@ -35,6 +39,9 @@
 SET foreign_key_checks = 0; #turn off constraints temporarily
 
 #since constraints cause problems, drop tables first, working backward
+DROP TABLE IF EXISTS sm16_responses_answers;
+DROP TABLE IF EXISTS sm16_responses;
+DROP TABLE IF EXISTS sm16_answers;
 DROP TABLE IF EXISTS sm16_questions;
 DROP TABLE IF EXISTS sm16_surveys;
 
@@ -46,11 +53,13 @@ Title VARCHAR(255) DEFAULT '',
 Description TEXT DEFAULT '',
 DateAdded DATETIME,
 LastUpdated TIMESTAMP DEFAULT 0 ON UPDATE CURRENT_TIMESTAMP,
+TimesViewed INT DEFAULT 0,
+Status INT DEFAULT 0,
 PRIMARY KEY (SurveyID)
 )ENGINE=INNODB;
 
 #assigning first survey to AdminID == 1
-INSERT INTO sm16_surveys VALUES (NULL,1,'Our First Survey','Description of Survey',NOW(),NOW());
+INSERT INTO sm16_surveys VALUES (NULL,1,'Our First Survey','Description of Survey',NOW(),NOW(),0,0);
 
 #foreign key field must match size and type, hence SurveyID is INT UNSIGNED
 CREATE TABLE sm16_questions(
@@ -69,9 +78,55 @@ INSERT INTO sm16_questions VALUES (NULL,1,'Do You Like Our Website?','We really 
 INSERT INTO sm16_questions VALUES (NULL,1,'Do You Like Cookies?','We like cookies!',NOW(),NOW());
 INSERT INTO sm16_questions VALUES (NULL,1,'Favorite Toppings?','We like chocolate!',NOW(),NOW());
 
-/*
-Add additional tables here
+
+CREATE TABLE sm16_answers(
+AnswerID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+QuestionID INT UNSIGNED DEFAULT 0,
+Answer TEXT DEFAULT '',
+Description TEXT DEFAULT '',
+DateAdded DATETIME,
+LastUpdated TIMESTAMP DEFAULT 0 ON UPDATE CURRENT_TIMESTAMP,
+Status INT DEFAULT 0,
+PRIMARY KEY (AnswerID),
+INDEX QuestionID_index(QuestionID),
+FOREIGN KEY (QuestionID) REFERENCES sm16_questions(QuestionID) ON DELETE CASCADE
+)ENGINE=INNODB;
+
+INSERT INTO sm16_answers VALUES (NULL,1,'Yes','',NOW(),NOW(),0);
+INSERT INTO sm16_answers VALUES (NULL,1,'No','',NOW(),NOW(),0);
+INSERT INTO sm16_answers VALUES (NULL,2,'Yes','',NOW(),NOW(),0);
+INSERT INTO sm16_answers VALUES (NULL,2,'No','',NOW(),NOW(),0);
+INSERT INTO sm16_answers VALUES (NULL,2,'Maybe','',NOW(),NOW(),0);
+INSERT INTO sm16_answers VALUES (NULL,3,'Chocolate','',NOW(),NOW(),0);
+INSERT INTO sm16_answers VALUES (NULL,3,'Butterscotch','',NOW(),NOW(),0);
+INSERT INTO sm16_answers VALUES (NULL,3,'Pineapple','',NOW(),NOW(),0);
 
 
-*/
+CREATE TABLE sm16_responses(
+ResponseID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+SurveyID INT UNSIGNED NOT NULL DEFAULT 0,
+DateAdded DATETIME,
+PRIMARY KEY (ResponseID),
+INDEX SurveyID_index(SurveyID),
+FOREIGN KEY (SurveyID) REFERENCES sm16_surveys(SurveyID) ON DELETE CASCADE
+)ENGINE=INNODB;
+
+INSERT INTO sm16_responses VALUES (NULL,1,NOW());
+
+
+CREATE TABLE sm16_responses_answers(
+RQID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+ResponseID INT UNSIGNED DEFAULT 0,
+QuestionID INT DEFAULT 0,
+AnswerID INT DEFAULT 0,
+PRIMARY KEY (RQID),
+INDEX ResponseID_index(ResponseID),
+FOREIGN KEY (ResponseID) REFERENCES sm16_responses(ResponseID) ON DELETE CASCADE
+)ENGINE=INNODB;
+
+INSERT INTO sm16_responses_answers VALUES (NULL,1,1,1);
+INSERT INTO sm16_responses_answers VALUES (NULL,1,2,5);
+INSERT INTO sm16_responses_answers VALUES (NULL,1,3,6);
+INSERT INTO sm16_responses_answers VALUES (NULL,1,3,7);
+INSERT INTO sm16_responses_answers VALUES (NULL,1,3,8);
 SET foreign_key_checks = 1; #turn foreign key check back on
