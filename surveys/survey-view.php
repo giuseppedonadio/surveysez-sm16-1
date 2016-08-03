@@ -17,9 +17,9 @@ require '../inc_0700/config_inc.php'; #provides configuration, pathing, error ha
 
 # check variable of item passed in - if invalid data, forcibly redirect back to ice-cream-list.php page
 if(isset($_GET['id']) && (int)$_GET['id'] > 0){#proper data must be on querystring
-	 $myID = (int)$_GET['id']; #Convert to integer, will equate to zero if fails
-}else{
-	myRedirect(VIRTUAL_PATH . "surveys/index.php");
+        $myID = (int)$_GET['id']; #Convert to integer, will equate to zero if fails
+        }else{
+        myRedirect(VIRTUAL_PATH . "surveys/index.php");
 }
 
 $mySurvey = new Survey($myID);
@@ -29,7 +29,8 @@ if($mySurvey->isValid)
 }else{//no survey in title tag
 		$config->titleTag = 'Sorry, no survey';
 }
-//dumpDie($mySurvey);
+
+dumpDie($mySurvey);
 
 # END CONFIG AREA ----------------------------------------------------------
 
@@ -47,6 +48,7 @@ class Survey
 		public $Description = '';
 		public $SurveyID = 0;
 		public $isValid = false;
+        public $Questions = array();
 
 		public function __construct($id)
 		{
@@ -57,17 +59,56 @@ class Survey
 
 				if(mysqli_num_rows($result) > 0)
 				{#records exist - process
-						 $this->SurveyID = $id;
-					   $this->isValid = true;
-					   while ($row = mysqli_fetch_assoc($result))
-					   {
-					  			$this->Title = dbOut($row['Title']);
-					        $this->Description = dbOut($row['Description']);
-					        //$Calories = (float)$row['Calories'];
-					   }
+                        $this->SurveyID = $id;
+                        $this->isValid = true;
+                        while ($row = mysqli_fetch_assoc($result))
+                        {
+                                $this->Title = dbOut($row['Title']);
+                                $this->Description = dbOut($row['Description']);
+                        }
 				}
 				@mysqli_free_result($result); # We're done with the data!
+            
+            
+                //  select q.QuestionID, q.Question from sm16_questions q inner join sm16_surveys s on s.SurveyID = q.SurveyID where s.SurveyID = 1
+
+            
+                // *** START OF QUESTION WORK ***
+                //sql= "select * from sm16_surveys where SurveyID = " . $id;
+                $sql = "select q.QuestionID, q.Question, q.Description from sm16_questions q inner join sm16_surveys s on s.SurveyID = q.SurveyID where s.SurveyID = " . $id;
+				$result = mysqli_query(IDB::conn(),$sql) or die(trigger_error(mysqli_error(IDB::conn()), E_USER_ERROR));
+
+				if(mysqli_num_rows($result) > 0)
+				{#records exist - process
+                        //$this->SurveyID = $id;
+                        //$this->isValid = true;
+                        while ($row = mysqli_fetch_assoc($result))
+                        {
+                            //$this->Title = dbOut($row['Title']);
+                            //$this->Description = dbOut($row['Description']);
+                            $this->Questions[] = new Question($row['QuestionID'],dbOut($row['Question']),dbOut($row['Description']));
+                        }
+				}
+				@mysqli_free_result($result); # We're done with the data!
+                // *** END OF QUESTION WORK ***
 
 		}# *** end Survey Constructor ***
 
 }# *** end Survey Class ***
+
+class Question
+{
+        public $QuestionID = 0;
+        public $Text = '';
+        public $Description = '';
+    
+        public function __construct($QuestionID,$Text,$Description)
+		{
+                $this->QuestionID = $QuestionID;
+                $this->Text = $Text;
+                $this->Description = $Description;
+        }# *** end Question Constructor ***
+    
+    
+    
+}# *** end Question Class ***		
